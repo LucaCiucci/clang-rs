@@ -1812,6 +1812,11 @@ impl<'tu> Entity<'tu> {
         Entity { raw, tu }
     }
 
+    /// Returns the hash value for the underlying [`CXCursor`].
+    pub fn cursor_hash(&self) -> std::ffi::c_uint {
+        unsafe { clang_hashCursor(self.raw) }
+    }
+
     //- Accessors --------------------------------
 
     /// Evaluates this AST entity, if possible.
