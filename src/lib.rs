@@ -1094,7 +1094,6 @@ pub enum PrintingPolicyFlag {
 // RefQualifier __________________________________
 
 /// Indicates the ref qualifier of a C++ function or method type.
-#[cfg_attr(feature="cargo-clippy", allow(clippy::enum_variant_names))]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 #[repr(C)]
 pub enum RefQualifier {
@@ -1738,7 +1737,7 @@ impl CompileCommands {
     }
 
     /// Returns all commands for this search
-    pub fn get_commands(&self) -> Vec<CompileCommand> {
+    pub fn get_commands<'s>(&'s self) -> Vec<CompileCommand<'s>> {
         iter!(
             clang_CompileCommands_getSize(self.ptr),
             clang_CompileCommands_getCommand(self.ptr),
@@ -1876,7 +1875,7 @@ impl<'tu> Entity<'tu> {
 
     #[cfg(feature="clang_7_0")]
     /// Returns the pretty printer for this declaration.
-    pub fn get_pretty_printer(&self) -> PrettyPrinter {
+    pub fn get_pretty_printer<'s>(&'s self) -> PrettyPrinter<'s> {
         unsafe { PrettyPrinter::from_raw(clang_getCursorPrintingPolicy(self.raw), self) }
     }
 
@@ -1954,7 +1953,7 @@ impl<'tu> Entity<'tu> {
     }
 
     /// Returns a completion string for this declaration or macro definition, if applicable.
-    pub fn get_completion_string(&self) -> Option<CompletionString> {
+    pub fn get_completion_string<'s>(&'s self) -> Option<CompletionString<'s>> {
         unsafe { clang_getCursorCompletionString(self.raw).map(CompletionString::from_ptr) }
     }
 
@@ -3111,7 +3110,7 @@ impl<'i> TranslationUnit<'i> {
     }
 
     /// Returns a completer which runs code completion.
-    pub fn completer<F: Into<PathBuf>>(&self, file: F, line: u32, column: u32) -> Completer {
+    pub fn completer<'s, F: Into<PathBuf>>(&'s self, file: F, line: u32, column: u32) -> Completer<'s> {
         Completer::new(self, file, line, column)
     }
 
@@ -3334,7 +3333,7 @@ impl<'tu> Type<'tu> {
 
     /// Returns the base type of this Objective-C type, if applicable.
     #[cfg(feature="clang_8_0")]
-    pub fn get_objc_object_base_type(&self) -> Option<Type> {
+    pub fn get_objc_object_base_type<'s>(&'s self) -> Option<Type<'s>> {
         unsafe { clang_Type_getObjCObjectBaseType(self.raw).map(|t| Type::from_raw(t, self.tu)) }
     }
 
@@ -3462,7 +3461,7 @@ impl<'tu> Type<'tu> {
             }
         }
 
-        extern fn visit(cursor: CXCursor, data: CXClientData) -> CXVisitorResult {
+        extern "C" fn visit(cursor: CXCursor, data: CXClientData) -> CXVisitorResult {
             unsafe {
                 let &mut (tu, ref mut callback) =
                     &mut *(data as *mut (&TranslationUnit, Box<dyn Callback>));
